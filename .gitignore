@@ -1,0 +1,13 @@
+# dependencies
+node_modules/
+
+# build
+dist/
+
+# ide
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# typescript
+*.tsbuildinfo

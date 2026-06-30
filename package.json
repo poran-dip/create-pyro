@@ -1,0 +1,46 @@
+{
+  "name": "create-pyro",
+  "version": "0.1.0",
+  "description": "Bootstrap new projects with Pyro.",
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "bin": {
+    "create-pyro": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "template"
+  ],
+  "keywords": [
+    "create",
+    "scaffold",
+    "starter",
+    "pyro"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poran-dip/create-pyro"
+  },
+  "author": {
+    "name": "Poran Dip",
+    "email": "hello@poran.dev",
+    "url": "https://poran.dev"
+  },
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "lint": "biome check --write",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
+    "@types/node": "^26.0.1",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}
