@@ -22,6 +22,10 @@
     "type": "git",
     "url": "git+https://github.com/poran-dip/create-pyro"
   },
+  "homepage": "https://github.com/poran-dip/create-pyro#readme",
+  "bugs": {
+    "url": "https://github.com/poran-dip/create-pyro/issues"
+  },
   "author": {
     "name": "Poran Dip",
     "email": "hello@poran.dev",
@@ -42,5 +46,9 @@
     "@types/prompts": "^2.4.9",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
   }
 }
