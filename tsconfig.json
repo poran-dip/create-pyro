@@ -5,9 +5,8 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "types": ["node"],
-    "outDir": "dist",
-    "rootDir": ".",
-    "strict": true
+    "strict": true,
+    "noEmit": true
   },
   "include": ["src", "tests"]
 }
