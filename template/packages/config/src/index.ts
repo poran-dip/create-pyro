@@ -1,0 +1,100 @@
+import { z } from "zod";
+
+const nodeEnv = z
+  .enum(["development", "production", "test"])
+  .default("development");
+
+const required = (hint: string) =>
+  z.string(`required — ${hint}`).min(1, `required — ${hint}`);
+
+const port = (fallback: number) =>
+  z.coerce.number().int().min(1).max(65535).default(fallback);
+
+const origin = (label: string) =>
+  required(`${label}, as an absolute http(s) URL`)
+    .refine((value) => {
+      try {
+        const { protocol } = new URL(value);
+        return protocol === "http:" || protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, `${label} — must be an absolute http(s) URL, e.g. http://localhost:3000`)
+    .refine(
+      (value) => !/\/api\/?$/.test(value),
+      `${label} — must be an origin only; drop the trailing "/api" (call sites append their own /api/... path)`,
+    )
+    .transform((value) => value.replace(/\/+$/, ""));
+
+const dbSchema = z.object({
+  DATABASE_URL: required("e.g. postgresql://app:password@localhost:15432/app"),
+});
+
+const authSchema = z.object({
+  BETTER_AUTH_URL: origin("origin of the API"),
+  BETTER_AUTH_SECRET: required("generate with `openssl rand -base64 32`").min(
+    32,
+    "must be at least 32 chars — generate with `openssl rand -base64 32`",
+  ),
+});
+
+const apiSchema = z.object({
+  NODE_ENV: nodeEnv,
+  API_PORT: port(3002),
+  CORS_ORIGIN: origin("origin of the web app"),
+});
+
+const webSchema = z.object({
+  NODE_ENV: nodeEnv,
+  PUBLIC_API_URL: origin("public origin of the API"),
+  INTERNAL_API_URL: origin("internal origin of the API").default(
+    "http://localhost:3002",
+  ),
+});
+
+function formatIssues(scope: string, error: z.ZodError): string {
+  const lines = error.issues.map((issue) => {
+    const key = issue.path.join(".") || "(root)";
+    return `  ${key}: ${issue.message}`;
+  });
+  return `Invalid environment for "${scope}":\n${lines.join("\n")}\n\nSee .env.example at the repo root.`;
+}
+
+/**
+ * Validates `process.env` against `schema` on first property access, not on
+ * import, so a process only needs the variables of the scopes it reads.
+ */
+function lazyEnv<T extends z.ZodType<object>>(
+  scope: string,
+  schema: T,
+): z.infer<T> {
+  let cached: z.infer<T> | undefined;
+
+  const load = (): z.infer<T> => {
+    if (cached) return cached;
+    const parsed = schema.safeParse(process.env);
+    if (!parsed.success) throw new Error(formatIssues(scope, parsed.error));
+    cached = parsed.data;
+    return cached;
+  };
+
+  return new Proxy({} as z.infer<T>, {
+    get: (_target, prop) => load()[prop as keyof z.infer<T>],
+    has: (_target, prop) => prop in load(),
+    ownKeys: () => Reflect.ownKeys(load()),
+    getOwnPropertyDescriptor: (_target, prop) => ({
+      ...Object.getOwnPropertyDescriptor(load(), prop),
+      configurable: true,
+    }),
+  });
+}
+
+export const dbEnv = lazyEnv("db", dbSchema);
+export const authEnv = lazyEnv("auth", authSchema);
+export const apiEnv = lazyEnv("api", apiSchema);
+export const webEnv = lazyEnv("web", webSchema);
+
+export type DbEnv = z.infer<typeof dbSchema>;
+export type AuthEnv = z.infer<typeof authSchema>;
+export type ApiEnv = z.infer<typeof apiSchema>;
+export type WebEnv = z.infer<typeof webSchema>;
