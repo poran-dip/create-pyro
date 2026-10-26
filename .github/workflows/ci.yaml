@@ -31,3 +31,79 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  # Scaffolds a project the way a user would, then holds it to the same
+  # checks as its own CI, plus a production compose smoke test.
+  scaffold:
+    runs-on: ubuntu-latest
+    env:
+      APP_DIR: ${{ github.workspace }}/../scaffold-check/acme-app
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm build
+
+      - name: Scaffold a project
+        run: |
+          mkdir -p "$(dirname "$APP_DIR")"
+          cd "$(dirname "$APP_DIR")"
+          git config --global user.name "CI"
+          git config --global user.email "ci@example.com"
+          node "$GITHUB_WORKSPACE/dist/index.js" acme-app --scope acme -y
+
+      - name: Start Postgres
+        working-directory: ${{ env.APP_DIR }}
+        run: docker compose -f compose.dev.yml up -d --wait
+
+      - name: Migrate
+        working-directory: ${{ env.APP_DIR }}
+        run: pnpm db:migrate
+
+      - name: Lint
+        working-directory: ${{ env.APP_DIR }}
+        run: pnpm lint:ci
+
+      - name: Typecheck
+        working-directory: ${{ env.APP_DIR }}
+        run: pnpm typecheck
+
+      - name: Test
+        working-directory: ${{ env.APP_DIR }}
+        run: pnpm test
+
+      - name: Build
+        working-directory: ${{ env.APP_DIR }}
+        run: pnpm build
+
+      - name: Production stack smoke test
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          docker compose -f compose.dev.yml down
+          docker compose up -d --build
+          for i in $(seq 1 60); do
+            curl -sf http://localhost/api/health && curl -sf -o /dev/null http://localhost/ && break
+            sleep 3
+          done
+          curl -sf http://localhost/api/health
+          curl -sf -o /dev/null http://localhost/
+          curl -sf -c jar -H "Origin: http://localhost" -H "Content-Type: application/json" \
+            -d '{"name":"CI","email":"ci@example.com","password":"password123"}' \
+            http://localhost/api/auth/sign-up/email
+          curl -sf -b jar http://localhost/dashboard | grep -q "ci@example.com"
+
+      - name: Compose logs on failure
+        if: failure()
+        working-directory: ${{ env.APP_DIR }}
+        run: docker compose logs --tail 100
