@@ -1,0 +1,27 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "start": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "persistent": true,
+      "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "app/**", "drizzle/**", "vitest.config.ts"],
+      "passThroughEnv": ["DATABASE_URL", "TEST_DATABASE_URL"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "cache": false
+    }
+  }
+}

@@ -1,2 +1,33 @@
-# dependencies
+# deps
 node_modules/
+.pnpm-store/
+
+# output
+dist/
+
+# react router
+.react-router/
+
+# env
+.env*
+!.env.example
+
+# logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# turbo
+.turbo
+
+# misc
+.DS_Store
+Thumbs.db
+*.local
+*.tsbuildinfo
