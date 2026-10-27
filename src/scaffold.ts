@@ -63,8 +63,14 @@ export function scaffold({ templateDir, dest, name, scope }: ScaffoldOptions) {
   }
 
   for (const file of walk(dest)) {
-    const original = fs.readFileSync(file, "utf8");
+    const buffer = fs.readFileSync(file);
+    if (buffer.includes(0)) continue; // binary, leave it alone
+
+    const original = buffer.toString("utf8");
     const rewritten = original
+      // A Windows checkout with core.autocrlf has CRLF, which the scaffold's
+      // Biome config (LF) would reject on its first lint.
+      .replaceAll("\r\n", "\n")
       .replaceAll(`@${TEMPLATE_SCOPE}/`, `@${scope}/`)
       .replaceAll(TEMPLATE_NAME, name);
     if (rewritten !== original) fs.writeFileSync(file, rewritten);

@@ -8,9 +8,18 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
+      # Match a typical Windows dev machine, so this job checks that
+      # .gitattributes keeps the checkout (and the scaffold) LF.
+      - if: runner.os == 'Windows'
+        run: git config --global core.autocrlf true
+
       - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6

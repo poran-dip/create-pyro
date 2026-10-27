@@ -4,10 +4,34 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   normalizeScope,
+  scaffold,
   toSlug,
   validateScope,
   writeEnv,
 } from "../src/scaffold.js";
+
+describe("scaffold", () => {
+  it("converts CRLF to LF and leaves binary files untouched", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "create-pyro-crlf-"));
+    const templateDir = path.join(root, "template");
+    const dest = path.join(root, "out");
+    const binary = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x00]);
+    fs.mkdirSync(templateDir);
+    fs.writeFileSync(
+      path.join(templateDir, "compose.yml"),
+      "name: my-pyro-app\r\nimage: @repo/api\r\n",
+    );
+    fs.writeFileSync(path.join(templateDir, "logo.png"), binary);
+
+    scaffold({ templateDir, dest, name: "demo", scope: "acme" });
+
+    expect(fs.readFileSync(path.join(dest, "compose.yml"), "utf8")).toBe(
+      "name: demo\nimage: @acme/api\n",
+    );
+    expect(fs.readFileSync(path.join(dest, "logo.png"))).toEqual(binary);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+});
 
 describe("toSlug", () => {
   it.each([
