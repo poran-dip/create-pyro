@@ -6,8 +6,8 @@ on:
       - "v*.*.*"
 
 permissions:
-  id-token: write
-  contents: read
+  contents: write # create the GitHub release
+  id-token: write # npm trusted publishing (OIDC)
 
 jobs:
   publish:
@@ -15,6 +15,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify the tag is on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Tag $GITHUB_REF_NAME points at a commit that isn't on main."
+            exit 1
+          fi
+
+      - name: Verify the tag matches package.json
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$PKG_VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag ($GITHUB_REF_NAME) does not match package.json version ($PKG_VERSION)."
+            exit 1
+          fi
 
       - uses: pnpm/action-setup@v6
 
@@ -24,22 +41,26 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
+      # Staged publishing needs npm 11.15.0+, newer than some Node 24 bundles.
+      - name: Update npm
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm build
 
-      - name: Verify tag matches package.json version
-        run: |
-          PKG_VERSION="v$(node -p "require('./package.json').version")"
-          TAG_VERSION="${GITHUB_REF_NAME}"
-          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
-            echo "Tag ($TAG_VERSION) does not match package.json version ($PKG_VERSION)"
-            exit 1
-          fi
+      - name: Test
+        run: pnpm test
 
-      - name: Publish
-        run: npm publish --provenance --access public
+      # No token: npm authenticates this workflow via OIDC (trusted publishing).
+      # The version stays hidden until a maintainer approves it with 2FA, on
+      # npmjs.com (Staged Packages) or with `npm stage approve <stage-id>`.
+      - name: Stage the npm release
+        run: npm stage publish
+
+      - name: Create a draft GitHub release
+        run: gh release create "$GITHUB_REF_NAME" --draft --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}

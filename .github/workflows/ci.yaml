@@ -1,10 +1,13 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  # Scaffolds install the template's dependencies fresh, so a new upstream
+  # release can break them without any commit here. Catch that weekly.
+  schedule:
+    - cron: "17 3 * * 1" # Mondays 03:17 UTC
+  workflow_dispatch:
 
 jobs:
   test:
