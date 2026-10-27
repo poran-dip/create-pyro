@@ -129,11 +129,14 @@ scaffold({
 
 console.log(`\n📦 Scaffolded ${name} with packages scoped @${scope}/*`);
 
-const run = (command: string, args: string[], quiet = false) =>
+// On Windows, pnpm is a .cmd shim that only runs through a shell, but a shell
+// joins args unquoted, splitting any with spaces. So only use one for pnpm,
+// and never pass it args with spaces.
+const run = (command: "git" | "pnpm", args: string[], quiet = false) =>
   spawnSync(command, args, {
     cwd: dest,
     stdio: quiet ? "ignore" : "inherit",
-    shell: process.platform === "win32",
+    shell: process.platform === "win32" && command === "pnpm",
   }).status === 0;
 
 let installed = false;
