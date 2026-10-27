@@ -1,0 +1,38 @@
+{
+  "name": "@repo/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch --no-clean",
+    "generate": "dotenv-run -- drizzle-kit generate --config drizzle.config.ts",
+    "migrate": "dotenv-run -- drizzle-kit migrate --config drizzle.config.ts",
+    "push": "dotenv-run -- drizzle-kit push --config drizzle.config.ts",
+    "studio": "dotenv-run -- drizzle-kit studio --config drizzle.config.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@paralleldrive/cuid2": "catalog:",
+    "@repo/config": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:"
+  },
+  "devDependencies": {
+    "@dotenv-run/cli": "catalog:",
+    "@types/node": "catalog:",
+    "drizzle-kit": "^0.31.11",
+    "@types/pg": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts"
+}

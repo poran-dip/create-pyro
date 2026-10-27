@@ -1,0 +1,30 @@
+# deps
+node_modules
+**/node_modules
+
+# build outputs
+**/dist
+**/.react-router
+
+# env and logs
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+
+# turbo
+.turbo
+**/.turbo
+
+# vcs
+.git
+.gitignore
+
+# editor
+.vscode
+
+# misc
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+**/*.md

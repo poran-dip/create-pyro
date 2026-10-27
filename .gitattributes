@@ -1,0 +1,3 @@
+# Keep LF everywhere, including Windows checkouts, so npm publishes and
+# scaffolded projects never carry CRLF (Biome formats with LF).
+* text=auto eol=lf
